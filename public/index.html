@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panga Rakendus</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="#">
+                    <i class="bi bi-bank me-2"></i>Panga Rakendus
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto" id="navLinks">
+                        <!-- Navigation links will be dynamically inserted here -->
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="container mt-4">
+            <div id="content">
+                <!-- Content will be dynamically inserted here -->
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-light py-3 mt-5">
+            <div class="container text-center">
+                <p class="mb-0">&copy; 2025 Panga Rakendus. Kõik õigused kaitstud.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Templates -->
+    <!-- Login Template -->
+    <template id="login-template">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="card shadow">
+                    <div class="card-body p-5">
+                        <h2 class="text-center mb-4">Sisselogimine</h2>
+                        <form id="loginForm">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Kasutajanimi</label>
+                                <input type="text" class="form-control" id="username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Parool</label>
+                                <input type="password" class="form-control" id="password" required>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">Logi sisse</button>
+                            </div>
+                            <div class="text-center mt-3">
+                                <p>Pole kontot? <a href="#" id="showRegister">Registreeru</a></p>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Register Template -->
+    <template id="register-template">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow">
+                    <div class="card-body p-5">
+                        <h2 class="text-center mb-4">Registreerimine</h2>
+                        <form id="registerForm">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="firstName" class="form-label">Eesnimi</label>
+                                    <input type="text" class="form-control" id="firstName" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="lastName" class="form-label">Perekonnanimi</label>
+                                    <input type="text" class="form-control" id="lastName" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="regUsername" class="form-label">Kasutajanimi</label>
+                                <input type="text" class="form-control" id="regUsername" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">E-post</label>
+                                <input type="email" class="form-control" id="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="regPassword" class="form-label">Parool</label>
+                                <input type="password" class="form-control" id="regPassword" required>
+                                <div class="form-text">Parool peab olema vähemalt 6 tähemärki pikk.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="confirmPassword" class="form-label">Kinnita parool</label>
+                                <input type="password" class="form-control" id="confirmPassword" required>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">Registreeru</button>
+                            </div>
+                            <div class="text-center mt-3">
+                                <p>Juba on konto? <a href="#" id="showLogin">Logi sisse</a></p>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Dashboard Template -->
+    <template id="dashboard-template">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h2>Tere tulemast, <span id="userFullName"></span>!</h2>
+                <p class="text-muted">Sinu pangakontode ülevaade</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <button id="createAccountBtn" class="btn btn-success">
+                    <i class="bi bi-plus-circle me-2"></i>Loo uus konto
+                </button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Minu kontod</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="accountsList" class="list-group list-group-flush">
+                            <!-- Accounts will be dynamically inserted here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Viimased tehingud</h5>
+                        <a href="#" id="viewAllTransactions" class="btn btn-sm btn-outline-primary">Vaata kõiki</a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="recentTransactionsList" class="list-group list-group-flush">
+                            <!-- Recent transactions will be dynamically inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 mt-4 mt-lg-0">
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Kiired toimingud</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button id="newTransferBtn" class="btn btn-outline-primary">
+                                <i class="bi bi-arrow-left-right me-2"></i>Uus ülekanne
+                            </button>
+                            <button id="externalTransferBtn" class="btn btn-outline-primary">
+                                <i class="bi bi-bank me-2"></i>Välispanga ülekanne
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Account Details Template -->
+    <template id="account-details-template">
+        <div class="mb-4">
+            <button id="backToDashboard" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Tagasi
+            </button>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-body">
+                <h3 id="accountName" class="mb-3"></h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="text-muted mb-1">Konto number</p>
+                        <p id="accountNumber" class="mb-3 fs-5"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="text-muted mb-1">Jääk</p>
+                        <p id="accountBalance" class="mb-3 fs-4 fw-bold"></p>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button id="accountTransferBtn" class="btn btn-primary">
+                        <i class="bi bi-arrow-left-right me-2"></i>Tee ülekanne
+                    </button>
+                    <button id="accountHistoryBtn" class="btn btn-outline-primary">
+                        <i class="bi bi-clock-history me-2"></i>Tehingute ajalugu
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Viimased tehingud</h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="accountTransactionsList" class="list-group list-group-flush">
+                    <!-- Account transactions will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- New Transfer Template -->
+    <template id="new-transfer-template">
+        <div class="mb-4">
+            <button id="backFromTransfer" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Tagasi
+            </button>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow">
+                    <div class="card-body p-4">
+                        <h3 class="mb-4">Uus ülekanne</h3>
+                        <form id="transferForm">
+                            <div class="mb-3">
+                                <label for="fromAccount" class="form-label">Saatja konto</label>
+                                <select class="form-select" id="fromAccount" required>
+                                    <!-- Source accounts will be dynamically inserted here -->
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="toAccount" class="form-label">Saaja konto</label>
+                                <input type="text" class="form-control" id="toAccount" required>
+                                <div class="form-text">Sisesta saaja konto number</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="amount" class="form-label">Summa</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="amount" min="0.01" step="0.01" required>
+                                    <span class="input-group-text" id="transferCurrency">EUR</span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="explanation" class="form-label">Selgitus</label>
+                                <input type="text" class="form-control" id="explanation" required>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">Tee ülekanne</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- New Account Template -->
+    <template id="new-account-template">
+        <div class="mb-4">
+            <button id="backFromNewAccount" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Tagasi
+            </button>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-body p-4">
+                        <h3 class="mb-4">Loo uus konto</h3>
+                        <form id="newAccountForm">
+                            <div class="mb-3">
+                                <label for="newAccountName" class="form-label">Konto nimi</label>
+                                <input type="text" class="form-control" id="newAccountName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="newAccountCurrency" class="form-label">Valuuta</label>
+                                <select class="form-select" id="newAccountCurrency" required>
+                                    <option value="EUR">EUR - Euro</option>
+                                    <option value="USD">USD - USA dollar</option>
+                                    <option value="GBP">GBP - Briti nael</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="initialBalance" class="form-label">Algne jääk</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="initialBalance" min="0" step="0.01" value="0">
+                                    <span class="input-group-text" id="newAccountCurrencySymbol">EUR</span>
+                                </div>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">Loo konto</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Transaction History Template -->
+    <template id="transaction-history-template">
+        <div class="mb-4">
+            <button id="backFromHistory" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Tagasi
+            </button>
+        </div>
+
+        <div class="card shadow">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">Tehingute ajalugu</h3>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown">
+                        <i class="bi bi-funnel me-1"></i>Filter
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="filterDropdown">
+                        <li><a class="dropdown-item filter-option" data-filter="all" href="#">Kõik tehingud</a></li>
+                        <li><a class="dropdown-item filter-option" data-filter="incoming" href="#">Sissetulevad</a></li>
+                        <li><a class="dropdown-item filter-option" data-filter="outgoing" href="#">Väljaminevad</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div id="transactionHistoryList" class="list-group list-group-flush">
+                    <!-- Transaction history will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Transaction Details Modal -->
+    <div class="modal fade" id="transactionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tehingu detailid</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <p class="text-muted mb-1">Tehingu ID</p>
+                        <p id="modalTransactionId" class="mb-3"></p>
+                    </div>
+                    <div class="mb-3">
+                        <p class="text-muted mb-1">Staatus</p>
+                        <p id="modalStatus" class="mb-3"></p>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1">Saatja</p>
+                            <p id="modalSender" class="mb-3"></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1">Saaja</p>
+                            <p id="modalReceiver" class="mb-3"></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1">Summa</p>
+                            <p id="modalAmount" class="mb-3 fw-bold"></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1">Kuupäev</p>
+                            <p id="modalDate" class="mb-3"></p>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <p class="text-muted mb-1">Selgitus</p>
+                        <p id="modalExplanation" class="mb-3"></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Sulge</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/accounts.js"></script>
+    <script src="js/transactions.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

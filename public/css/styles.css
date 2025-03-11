@@ -1,0 +1,177 @@
+/* Main Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.navbar-brand {
+    font-weight: 600;
+}
+
+/* Card Styling */
+.card {
+    border: none;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.card-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 15px 20px;
+}
+
+/* Account List Styling */
+.account-item {
+    padding: 15px 20px;
+    transition: background-color 0.2s;
+}
+
+.account-item:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+    cursor: pointer;
+}
+
+.account-balance {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+/* Transaction List Styling */
+.transaction-item {
+    padding: 15px 20px;
+    transition: background-color 0.2s;
+}
+
+.transaction-item:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+    cursor: pointer;
+}
+
+.transaction-amount {
+    font-weight: 600;
+}
+
+.transaction-amount.credit {
+    color: #198754;
+}
+
+.transaction-amount.debit {
+    color: #dc3545;
+}
+
+.transaction-date {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.transaction-status {
+    font-size: 0.85rem;
+    padding: 3px 8px;
+    border-radius: 20px;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-inProgress {
+    background-color: #cfe2ff;
+    color: #0d6efd;
+}
+
+.status-completed {
+    background-color: #d1e7dd;
+    color: #198754;
+}
+
+.status-failed {
+    background-color: #f8d7da;
+    color: #dc3545;
+}
+
+/* Form Styling */
+.form-control:focus, .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Button Styling */
+.btn {
+    border-radius: 5px;
+    padding: 8px 16px;
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 15px;
+    }
+}
+
+/* Animation for loading */
+.loading-spinner {
+    display: inline-block;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top-color: #0d6efd;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Toast notifications */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+}
+
+.toast {
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    margin-bottom: 10px;
+    min-width: 250px;
+}
+
+.toast-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.toast-success .toast-header {
+    background-color: #d1e7dd;
+    color: #0f5132;
+}
+
+.toast-error .toast-header {
+    background-color: #f8d7da;
+    color: #842029;
+}
+
+.toast-warning .toast-header {
+    background-color: #fff3cd;
+    color: #664d03;
+}
+
+.toast-info .toast-header {
+    background-color: #cfe2ff;
+    color: #084298;
+}
