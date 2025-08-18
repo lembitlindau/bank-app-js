@@ -1,13 +1,39 @@
 {
   "name": "bank-app-js",
   "version": "1.0.0",
-  "description": "Bank web application with interbank transaction capabilities",
+  "description": "A comprehensive interbank transaction system with secure JWT-based communication between banks",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "jest"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "generate-keys": "mkdir -p keys && cd keys && openssl genpkey -algorithm RSA -out private.pem -pkcs8 -aes256 -pass pass:bankkey123 && openssl rsa -in private.pem -pubout -out public.pem -passin pass:bankkey123",
+    "setup": "npm install && npm run generate-keys"
   },
+  "keywords": [
+    "banking",
+    "interbank",
+    "transactions",
+    "jwt",
+    "express",
+    "mongodb",
+    "financial",
+    "api",
+    "b2b",
+    "payments"
+  ],
+  "author": "Bank Development Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lembitlindau/bank-app-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lembitlindau/bank-app-js/issues"
+  },
+  "homepage": "https://github.com/lembitlindau/bank-app-js#readme",
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",

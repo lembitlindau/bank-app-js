@@ -12,6 +12,10 @@ const authRoutes = require('./routes/auth.routes');
 const accountRoutes = require('./routes/account.routes');
 const transactionRoutes = require('./routes/transaction.routes');
 const userRoutes = require('./routes/user.routes');
+const centralBankRoutes = require('./routes/centralBank.routes');
+
+// Import services
+const startupService = require('./services/startup.service');
 
 // Initialize express app
 const app = express();
@@ -65,6 +69,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/accounts', accountRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/central-bank', centralBankRoutes);
+
+// JWKS endpoint for other banks
+app.use('/.well-known', transactionRoutes);
 
 // Serve the main application
 app.get('/', (req, res) => {
@@ -91,6 +99,9 @@ mongoose
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Swagger documentation available at http://localhost:${PORT}/docs`);
+      
+      // Initialize bank services
+      startupService.initialize();
     });
   })
   .catch((err) => {

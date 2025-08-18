@@ -48,6 +48,18 @@ const transactionSchema = new mongoose.Schema(
       enum: ['internal', 'external', 'incoming'],
       required: true,
     },
+    isInterbank: {
+      type: Boolean,
+      default: false,
+    },
+    senderBankPrefix: {
+      type: String,
+      default: null,
+    },
+    receiverBankPrefix: {
+      type: String,
+      default: null,
+    },
     errorMessage: {
       type: String,
       default: '',
@@ -55,7 +67,22 @@ const transactionSchema = new mongoose.Schema(
     initiatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: function() {
+        // Not required for incoming transactions from other banks
+        return this.type !== 'incoming';
+      },
+    },
+    completedAt: {
+      type: Date,
+      default: null,
+    },
+    failedAt: {
+      type: Date,
+      default: null,
+    },
+    receivedAt: {
+      type: Date,
+      default: null,
     },
     createdAt: {
       type: Date,
@@ -77,6 +104,9 @@ transactionSchema.index({ fromAccount: 1 });
 transactionSchema.index({ toAccount: 1 });
 transactionSchema.index({ status: 1 });
 transactionSchema.index({ transactionId: 1 });
+transactionSchema.index({ isInterbank: 1 });
+transactionSchema.index({ senderBankPrefix: 1 });
+transactionSchema.index({ receiverBankPrefix: 1 });
 
 // Method to update transaction status
 transactionSchema.methods.updateStatus = function (status, errorMessage = '') {

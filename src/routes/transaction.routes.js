@@ -10,6 +10,10 @@ const Transaction = require('../models/transaction.model');
 const User = require('../models/user.model');
 const { authenticate } = require('../middlewares/auth.middleware');
 
+// Import services
+const jwtService = require('../services/jwt.service');
+const interbankService = require('../services/interbank.service');
+
 const router = express.Router();
 
 // Apply authentication middleware to all transaction routes except b2b
@@ -17,6 +21,11 @@ router.use((req, res, next) => {
   if (req.path === '/b2b') {
     return next();
   }
+
+  if (req.path === '/jwks' || req.path === '/.well-known/jwks.json') {
+    return next();
+  }
+
   authenticate(req, res, next);
 });
 
@@ -353,9 +362,8 @@ router.post(
         });
       }
 
-      // Check if destination account is from another bank
-      const bankPrefix = process.env.BANK_PREFIX;
-      if (toAccount.startsWith(bankPrefix)) {
+      // Check if destination account is external (different bank)
+      if (!interbankService.isExternalAccount(toAccount)) {
         return res.status(400).json({
           status: 'error',
           message: 'For internal transfers, use the internal transaction endpoint',
@@ -382,97 +390,38 @@ router.post(
         senderName: req.user.fullName,
         status: 'pending',
         type: 'external',
+        isInterbank: true,
         initiatedBy: req.user._id,
       });
 
       // Save transaction
       await transaction.save();
 
-      // Update transaction status to in progress
-      await transaction.updateStatus('inProgress');
-
       try {
         // Debit the source account
         await sourceAccount.updateBalance(amountInCents, 'debit');
 
-        // Get the destination bank prefix (first 3 characters)
-        const destinationBankPrefix = toAccount.substring(0, 3);
-
-        // Get the destination bank details from Central Bank
-        const centralBankUrl = process.env.CENTRAL_BANK_URL;
-        const centralBankApiKey = process.env.CENTRAL_BANK_API_KEY;
-
-        const bankResponse = await fetch(`${centralBankUrl}/banks/${destinationBankPrefix}`, {
-          headers: {
-            'Authorization': `Bearer ${centralBankApiKey}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!bankResponse.ok) {
-          throw new Error(`Failed to get destination bank details: ${bankResponse.statusText}`);
-        }
-
-        const bankData = await bankResponse.json();
-        const destinationBankUrl = bankData.transactionUrl;
-
-        // Create JWT payload
-        const payload = {
-          accountFrom: fromAccount,
-          accountTo: toAccount,
-          currency: sourceAccount.currency,
-          amount: amountInCents,
-          explanation,
-          senderName: req.user.fullName,
-        };
-
-        // Sign the JWT with our private key
-        const privateKeyPath = process.env.PRIVATE_KEY_PATH;
-        const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
-
-        const jwtToken = jwt.sign(payload, privateKey, {
-          algorithm: 'RS256',
-          keyid: '1', // Key ID for JWKS
-        });
-
-        // Send the transaction to the destination bank
-        const transactionResponse = await fetch(`${destinationBankUrl}/transactions/b2b`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ jwt: jwtToken }),
-        });
-
-        if (!transactionResponse.ok) {
-          const errorData = await transactionResponse.json();
-          throw new Error(`Transaction failed: ${errorData.message || transactionResponse.statusText}`);
-        }
-
-        const responseData = await transactionResponse.json();
-
-        // Update transaction with receiver name
-        transaction.receiverName = responseData.receiverName || 'Unknown';
-        
-        // Update transaction status to completed
-        await transaction.updateStatus('completed');
+        // Process interbank transaction
+        const result = await interbankService.processOutgoingTransaction(transaction);
 
         res.status(201).json({
           status: 'success',
           message: 'Transaction completed successfully',
           data: {
-            transaction,
-            receiverName: responseData.receiverName,
+            transaction: await Transaction.findById(transaction._id), // Get updated transaction
+            receiverName: result.receiverName,
           },
         });
       } catch (error) {
         // If any error occurs during the transaction, update status to failed
-        await transaction.updateStatus('failed', error.message);
+        await Transaction.findByIdAndUpdate(transaction._id, {
+          status: 'failed',
+          errorMessage: error.message,
+          failedAt: new Date()
+        });
 
-        // If the source account was already debited, credit it back
-        if (transaction.status === 'inProgress') {
-          await sourceAccount.updateBalance(amountInCents, 'credit');
-        }
+        // Credit back the source account
+        await sourceAccount.updateBalance(amountInCents, 'credit');
 
         throw error;
       }
@@ -775,6 +724,171 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({
       status: 'error',
       message: 'Internal server error',
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /.well-known/jwks.json:
+ *   get:
+ *     summary: Get bank's public keys in JWKS format
+ *     tags: [Interbank]
+ *     responses:
+ *       200:
+ *         description: JWKS (JSON Web Key Set) containing bank's public keys
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 keys:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       500:
+ *         description: Server error
+ */
+router.get(['/.well-known/jwks.json', '/jwks'], async (req, res) => {
+  try {
+    const jwks = jwtService.generateJWKS();
+    res.status(200).json(jwks);
+  } catch (error) {
+    console.error('JWKS generation error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to generate JWKS'
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/transactions/b2b:
+ *   post:
+ *     summary: Process interbank transaction from another bank
+ *     tags: [Interbank]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - jwt
+ *             properties:
+ *               jwt:
+ *                 type: string
+ *                 description: JWT signed by sender bank containing transaction data
+ *     responses:
+ *       200:
+ *         description: Transaction processed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 receiverName:
+ *                   type: string
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Bad request or invalid JWT
+ *       401:
+ *         description: Invalid signature
+ *       404:
+ *         description: Destination account not found
+ *       422:
+ *         description: Transaction cannot be processed
+ *       500:
+ *         description: Server error
+ */
+router.post('/b2b', [
+  body('jwt')
+    .notEmpty()
+    .withMessage('JWT is required')
+], async (req, res) => {
+  try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: 'error',
+        errors: errors.array(),
+      });
+    }
+
+    const { jwt: transactionJWT } = req.body;
+
+    // Process incoming interbank transaction
+    const result = await interbankService.processIncomingTransaction(transactionJWT);
+
+    res.status(200).json(result);
+
+  } catch (error) {
+    console.error('B2B transaction error:', error);
+    
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        status: 'error',
+        message: error.message
+      });
+    }
+
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal server error'
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/transactions/status/{transactionId}:
+ *   get:
+ *     summary: Get transaction status by ID
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: transactionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Transaction status retrieved successfully
+ *       404:
+ *         description: Transaction not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/status/:transactionId', async (req, res) => {
+  try {
+    const { transactionId } = req.params;
+    
+    const status = await interbankService.getTransactionStatus(transactionId);
+    
+    if (status.status === 'not_found') {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Transaction not found'
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: status
+    });
+
+  } catch (error) {
+    console.error('Get transaction status error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal server error'
     });
   }
 });
