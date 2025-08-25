@@ -34,6 +34,7 @@ router.use((req, res, next) => {
  * /api/transactions:
  *   get:
  *     summary: Get all transactions for the authenticated user
+ *     description: Retrieves all transactions associated with the authenticated user's accounts with optional filtering
  *     tags: [Transactions]
  *     security:
  *       - bearerAuth: []
@@ -43,22 +44,87 @@ router.use((req, res, next) => {
  *         schema:
  *           type: string
  *           enum: [pending, inProgress, completed, failed]
+ *         description: Filter by transaction status
+ *         example: "completed"
  *       - in: query
  *         name: type
  *         schema:
  *           type: string
  *           enum: [internal, external, incoming]
+ *         description: Filter by transaction type
+ *         example: "internal"
  *       - in: query
  *         name: accountNumber
  *         schema:
  *           type: string
+ *         description: Filter by account number (source or destination)
+ *         example: "EE123456789012345678"
  *     responses:
  *       200:
  *         description: List of transactions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "success"
+ *                 results:
+ *                   type: number
+ *                   description: Number of transactions returned
+ *                   example: 5
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     transactions:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Transaction'
+ *             examples:
+ *               userTransactions:
+ *                 summary: User transaction list
+ *                 value:
+ *                   status: "success"
+ *                   results: 3
+ *                   data:
+ *                     transactions:
+ *                       - id: "613f5b46a47af9001c40f405"
+ *                         transactionId: "TXN202425001"
+ *                         fromAccount: "EE123456789012345678"
+ *                         toAccount: "EE123456789012345679"
+ *                         amount: 150.00
+ *                         currency: "EUR"
+ *                         explanation: "Monthly rent payment"
+ *                         status: "completed"
+ *                         type: "internal"
+ *                         senderName: "John Doe"
+ *                         receiverName: "Jane Smith"
+ *                         createdAt: "2025-03-01T10:30:00Z"
+ *                       - id: "613f5b46a47af9001c40f406"
+ *                         transactionId: "TXN202425002"
+ *                         fromAccount: "EE123456789012345678"
+ *                         toAccount: "LV123456789012345678"
+ *                         amount: 250.00
+ *                         currency: "EUR"
+ *                         explanation: "International transfer"
+ *                         status: "completed"
+ *                         type: "external"
+ *                         senderName: "John Doe"
+ *                         receiverName: "Foreign Account Holder"
+ *                         createdAt: "2025-03-01T09:15:00Z"
  *       401:
  *         description: Not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/', async (req, res) => {
   try {
